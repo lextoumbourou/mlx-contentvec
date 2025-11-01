@@ -34,3 +34,12 @@ git clone git@github.com:auspicious3000/contentvec.git
 git clone git@github.com:facebookresearch/fairseq.git --branch main --single-branch
 cd fairseq && git reset --hard 0b21875e45f332bedbcc0617dcf9379d3c03855f
 ```
+
+Also, download the reference weights that we're using to compare:
+
+```bash
+wget -O vendor/ref_weights/hubert_base.pt "https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/hubert_base.pt?download=true"
+# Check md5sum
+md5sum vendor/ref_weights/hubert_base.pt
+b76f784c1958d4e535cd0f6151ca35e4  vendor/ref_weights/hubert_base.pt
+```

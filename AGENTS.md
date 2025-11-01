@@ -39,9 +39,12 @@ Reference tests require dev dependencies and will skip if PyTorch is not install
 
 ## Reference implementation
 
-The reference implementatio  for ContentVec can be found in `vendor/contentvec`. Fairseq can be found in `vendor/fairseq`.
+The reference implementation for ContentVec can be found in `vendor/contentvec`. Fairseq can be found in `vendor/fairseq`.
 
-The module should no  depend on fairseq or contentvec (except in reference tests), so we'll reimplement any code we need, to keep this a stand-alone repo.
+### Important: Standalone vs Reference Code
+
+- **The core module (`mlx_contentvec`)** should NOT depend on fairseq or contentvec. Reimplement any code needed to keep this a standalone module.
+- **Reference tests** CAN use fairseq/contentvec directly. No need to create standalone PyTorch versions for testing - just import from vendor directories.
 
 ## Coding Standards
 
