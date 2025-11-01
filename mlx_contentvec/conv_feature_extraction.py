@@ -1,6 +1,6 @@
-from typing import List, Tuple
 import mlx.core as mx
 import mlx.nn as nn
+
 from .modules.group_norm import Fp32GroupNorm, GroupNormMasked
 
 
@@ -13,7 +13,6 @@ def lengths_to_padding_mask(lengths: mx.array) -> mx.array:
     Returns:
         Padding mask of shape (batch_size, max_length) where True indicates padding
     """
-    batch_size = lengths.shape[0]
     max_length = int(mx.max(lengths).item())
 
     # Create range array [0, 1, 2, ..., max_length-1]
@@ -46,9 +45,7 @@ class ConvBlock(nn.Module):
         self.is_group_norm_masked = is_group_norm and mode == "group_norm_masked"
 
         # Convolutional layer
-        self.conv = nn.Conv1d(
-            n_in, n_out, kernel_size=kernel_size, stride=stride, bias=conv_bias
-        )
+        self.conv = nn.Conv1d(n_in, n_out, kernel_size=kernel_size, stride=stride, bias=conv_bias)
 
         # Initialize with Kaiming normal
         fan_in = n_in * kernel_size
@@ -113,7 +110,7 @@ class ConvFeatureExtractionModel(nn.Module):
 
     def __init__(
         self,
-        conv_layers: List[Tuple[int, int, int]],
+        conv_layers: list[tuple[int, int, int]],
         dropout: float = 0.0,
         mode: str = "default",
         conv_bias: bool = False,

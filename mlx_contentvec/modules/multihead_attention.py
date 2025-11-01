@@ -1,5 +1,4 @@
 import math
-from typing import Optional, Tuple
 
 import mlx.core as mx
 import mlx.nn as nn
@@ -16,8 +15,8 @@ class MultiheadAttention(nn.Module):
         self,
         embed_dim: int,
         num_heads: int,
-        kdim: Optional[int] = None,
-        vdim: Optional[int] = None,
+        kdim: int | None = None,
+        vdim: int | None = None,
         dropout: float = 0.0,
         bias: bool = True,
         add_bias_kv: bool = False,
@@ -35,10 +34,8 @@ class MultiheadAttention(nn.Module):
         self.dropout = dropout
 
         self.head_dim = embed_dim // num_heads
-        assert (
-            self.head_dim * num_heads == self.embed_dim
-        ), "embed_dim must be divisible by num_heads"
-        self.scaling = self.head_dim ** -0.5
+        assert self.head_dim * num_heads == self.embed_dim, "embed_dim must be divisible by num_heads"
+        self.scaling = self.head_dim**-0.5
 
         self.self_attention = self_attention
         self.encoder_decoder_attention = encoder_decoder_attention
@@ -103,12 +100,12 @@ class MultiheadAttention(nn.Module):
     def __call__(
         self,
         query: mx.array,
-        key: Optional[mx.array] = None,
-        value: Optional[mx.array] = None,
-        key_padding_mask: Optional[mx.array] = None,
-        attn_mask: Optional[mx.array] = None,
+        key: mx.array | None = None,
+        value: mx.array | None = None,
+        key_padding_mask: mx.array | None = None,
+        attn_mask: mx.array | None = None,
         need_weights: bool = True,
-    ) -> Tuple[mx.array, Optional[mx.array]]:
+    ) -> tuple[mx.array, mx.array | None]:
         """
         Forward pass for multi-head attention.
 
@@ -164,9 +161,7 @@ class MultiheadAttention(nn.Module):
             k = mx.concatenate([k, mx.broadcast_to(self.bias_k, (1, bsz, self.embed_dim))], axis=0)
             v = mx.concatenate([v, mx.broadcast_to(self.bias_v, (1, bsz, self.embed_dim))], axis=0)
             if attn_mask is not None:
-                attn_mask = mx.concatenate(
-                    [attn_mask, mx.zeros((attn_mask.shape[0], 1))], axis=1
-                )
+                attn_mask = mx.concatenate([attn_mask, mx.zeros((attn_mask.shape[0], 1))], axis=1)
             if key_padding_mask is not None:
                 key_padding_mask = mx.concatenate(
                     [key_padding_mask, mx.zeros((key_padding_mask.shape[0], 1))],
@@ -190,9 +185,7 @@ class MultiheadAttention(nn.Module):
             k = mx.concatenate([k, mx.zeros((k.shape[0], 1, k.shape[2]))], axis=1)
             v = mx.concatenate([v, mx.zeros((v.shape[0], 1, v.shape[2]))], axis=1)
             if attn_mask is not None:
-                attn_mask = mx.concatenate(
-                    [attn_mask, mx.zeros((attn_mask.shape[0], 1))], axis=1
-                )
+                attn_mask = mx.concatenate([attn_mask, mx.zeros((attn_mask.shape[0], 1))], axis=1)
             if key_padding_mask is not None:
                 key_padding_mask = mx.concatenate(
                     [
@@ -222,9 +215,7 @@ class MultiheadAttention(nn.Module):
             key_padding_mask_expanded = mx.expand_dims(mx.expand_dims(key_padding_mask, 1), 2)
             # Set attention weights to -inf where padding mask is 1
             attn_weights = mx.where(
-                key_padding_mask_expanded.astype(mx.bool_),
-                mx.full(attn_weights.shape, -1e9),
-                attn_weights
+                key_padding_mask_expanded.astype(mx.bool_), mx.full(attn_weights.shape, -1e9), attn_weights
             )
             attn_weights = attn_weights.reshape(bsz * self.num_heads, tgt_len, src_len)
 
@@ -255,11 +246,9 @@ class MultiheadAttention(nn.Module):
         attn_output = self.out_proj(attn_output)
 
         # Prepare attention weights for return
-        attn_weights_out: Optional[mx.array] = None
+        attn_weights_out: mx.array | None = None
         if need_weights:
-            attn_weights_out = attn_weights_float.reshape(
-                bsz, self.num_heads, tgt_len, src_len
-            ).transpose(1, 0, 2, 3)
+            attn_weights_out = attn_weights_float.reshape(bsz, self.num_heads, tgt_len, src_len).transpose(1, 0, 2, 3)
             # Average attention weights over heads
             attn_weights_out = mx.mean(attn_weights_out, axis=0)
 

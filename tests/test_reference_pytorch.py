@@ -12,10 +12,12 @@ Install with: pip install -e ".[dev]"
 
 import sys
 from pathlib import Path
+
 import numpy as np
 
 try:
     import torch
+
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
@@ -26,12 +28,13 @@ import pytest
 # Import MLX implementation
 from mlx_contentvec.conv_feature_extraction import ConvFeatureExtractionModel as ConvFeatureExtractionModelMLX
 
-# Import PyTorch implementation from parent directory
+# Import PyTorch implementation from vendor directory
 if TORCH_AVAILABLE:
-    parent_dir = Path(__file__).parent.parent.parent
-    sys.path.insert(0, str(parent_dir))
+    vendor_dir = Path(__file__).parent.parent / "vendor"
+    sys.path.insert(0, str(vendor_dir))
     try:
         from conv_feature_pytorch_standalone import ConvFeatureExtractionModel as ConvFeatureExtractionModelPT
+
         PYTORCH_MODEL_AVAILABLE = True
     except ImportError:
         PYTORCH_MODEL_AVAILABLE = False
@@ -41,8 +44,7 @@ else:
 
 # Skip all tests if PyTorch is not available
 pytestmark = pytest.mark.skipif(
-    not TORCH_AVAILABLE or not PYTORCH_MODEL_AVAILABLE,
-    reason="PyTorch or PyTorch model implementation not available"
+    not TORCH_AVAILABLE or not PYTORCH_MODEL_AVAILABLE, reason="PyTorch or PyTorch model implementation not available"
 )
 
 
@@ -50,15 +52,10 @@ def load_pytorch_model():
     """Load PyTorch model with weights."""
     conv_layers = [(512, 10, 5)] + [(512, 3, 2)] * 4 + [(512, 2, 2)] * 2
 
-    model = ConvFeatureExtractionModelPT(
-        conv_layers=conv_layers,
-        dropout=0.0,
-        mode="default",
-        conv_bias=False
-    )
+    model = ConvFeatureExtractionModelPT(conv_layers=conv_layers, dropout=0.0, mode="default", conv_bias=False)
 
     # Load weights
-    weights_path = Path(__file__).parent.parent.parent / "feature_extractor_weights.pt"
+    weights_path = Path(__file__).parent.parent / "vendor" / "feature_extractor_weights.pt"
     if not weights_path.exists():
         pytest.skip(f"Weights file not found at {weights_path}")
 
@@ -74,15 +71,10 @@ def load_mlx_model():
     """Load MLX model with weights."""
     conv_layers = [(512, 10, 5)] + [(512, 3, 2)] * 4 + [(512, 2, 2)] * 2
 
-    model = ConvFeatureExtractionModelMLX(
-        conv_layers=conv_layers,
-        dropout=0.0,
-        mode="default",
-        conv_bias=False
-    )
+    model = ConvFeatureExtractionModelMLX(conv_layers=conv_layers, dropout=0.0, mode="default", conv_bias=False)
 
     # Load weights
-    weights_path = Path(__file__).parent.parent.parent / "feature_extractor_weights.pt"
+    weights_path = Path(__file__).parent.parent / "vendor" / "feature_extractor_weights.pt"
     if not weights_path.exists():
         pytest.skip(f"Weights file not found at {weights_path}")
 
@@ -140,13 +132,15 @@ def test_conv_feature_extraction_single_batch():
     output_mlx_np = np.array(output_mlx)
 
     # Check shapes match
-    assert output_pt_np.shape == output_mlx_np.shape, \
+    assert output_pt_np.shape == output_mlx_np.shape, (
         f"Shapes don't match: PyTorch {output_pt_np.shape} vs MLX {output_mlx_np.shape}"
+    )
 
     # Check values are close
     atol, rtol = 1e-4, 1e-3
-    assert np.allclose(output_pt_np, output_mlx_np, atol=atol, rtol=rtol), \
+    assert np.allclose(output_pt_np, output_mlx_np, atol=atol, rtol=rtol), (
         f"Outputs don't match within tolerance (atol={atol}, rtol={rtol})"
+    )
 
 
 def test_conv_feature_extraction_batch():
@@ -171,18 +165,20 @@ def test_conv_feature_extraction_batch():
     output_mlx_np = np.array(output_mlx)
 
     # Check shapes match
-    assert output_pt_np.shape == output_mlx_np.shape, \
+    assert output_pt_np.shape == output_mlx_np.shape, (
         f"Shapes don't match: PyTorch {output_pt_np.shape} vs MLX {output_mlx_np.shape}"
+    )
 
     # Check values are close
     atol, rtol = 1e-4, 1e-3
-    assert np.allclose(output_pt_np, output_mlx_np, atol=atol, rtol=rtol), \
+    assert np.allclose(output_pt_np, output_mlx_np, atol=atol, rtol=rtol), (
         f"Outputs don't match within tolerance (atol={atol}, rtol={rtol})"
+    )
 
 
 def test_conv_feature_extraction_shape():
     """Test that output shape is correct."""
-    pt_model = load_pytorch_model()
+    load_pytorch_model()
     mlx_model = load_mlx_model()
 
     # Create input
@@ -205,8 +201,9 @@ def test_conv_feature_extraction_shape():
     # Conv7 (kernel=2, stride=2): (99-2)/2 + 1 = 49
 
     expected_shape = (batch_size, 512, 49)
-    assert output_mlx_np.shape == expected_shape, \
+    assert output_mlx_np.shape == expected_shape, (
         f"Shape mismatch: expected {expected_shape}, got {output_mlx_np.shape}"
+    )
 
 
 if __name__ == "__main__":
@@ -230,6 +227,6 @@ if __name__ == "__main__":
     test_conv_feature_extraction_shape()
     print("PASSED\n")
 
-    print("="*60)
+    print("=" * 60)
     print("All tests passed!")
-    print("="*60)
+    print("=" * 60)

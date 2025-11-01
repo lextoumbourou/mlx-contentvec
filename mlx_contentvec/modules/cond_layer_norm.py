@@ -7,13 +7,7 @@ class CondLayerNorm(nn.Module):
     Conditional Layer Normalization that takes speaker embeddings as conditioning.
     """
 
-    def __init__(
-        self,
-        dim_last: int,
-        eps: float = 1e-5,
-        dim_spk: int = 256,
-        elementwise_affine: bool = True
-    ):
+    def __init__(self, dim_last: int, eps: float = 1e-5, dim_spk: int = 256, elementwise_affine: bool = True):
         super().__init__()
         self.dim_last = dim_last
         self.eps = eps
@@ -33,11 +27,6 @@ class CondLayerNorm(nn.Module):
         # Generate weight and bias from speaker embedding
         weight = self.weight_ln(spk_emb)
         bias = self.bias_ln(spk_emb)
-
-        # Compute layer norm
-        # input shape: (seq_len, batch, dim) or (batch, seq_len, dim)
-        # Normalize over the last dimension(s)
-        normalized_shape = input.shape[1:]
 
         # Calculate mean and variance over the normalized dimensions
         mean = mx.mean(input, axis=tuple(range(1, len(input.shape))), keepdims=True)

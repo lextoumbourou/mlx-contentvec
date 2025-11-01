@@ -103,7 +103,7 @@ class GroupNormMasked(nn.Module):
 
         # Compute variance considering mask
         var_ = mx.var(x_masked, axis=3, keepdims=True)
-        var = (var_ + mean_ ** 2) * L / lengths - mean ** 2
+        var = (var_ + mean_**2) * L / lengths - mean**2
         var = var + self.eps
 
         # Normalize

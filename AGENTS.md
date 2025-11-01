@@ -42,3 +42,7 @@ Reference tests require dev dependencies and will skip if PyTorch is not install
 The reference implementatio  for ContentVec can be found in `vendor/contentvec`. Fairseq can be found in `vendor/fairseq`.
 
 The module should no  depend on fairseq or contentvec (except in reference tests), so we'll reimplement any code we need, to keep this a stand-alone repo.
+
+## Coding Standards
+
+- **Always use `pathlib`** for file path operations instead of string concatenation or `os.path`

@@ -1,8 +1,9 @@
-import pytest
 import mlx.core as mx
+import pytest
+
 from mlx_contentvec.conv_feature_extraction import (
-    ConvFeatureExtractionModel,
     ConvBlock,
+    ConvFeatureExtractionModel,
     lengths_to_padding_mask,
 )
 
