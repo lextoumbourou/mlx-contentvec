@@ -23,3 +23,14 @@ The project uses pytest for testing. To run all tests:
 ```bash
 pytest
 ```
+
+## Development
+
+For simplicity of reference comparison, I'm clone the reference repos to the vendor directory:
+
+```bash
+cd vendor
+git clone git@github.com:auspicious3000/contentvec.git
+git clone git@github.com:facebookresearch/fairseq.git --branch main --single-branch
+cd fairseq && git reset --hard 0b21875e45f332bedbcc0617dcf9379d3c03855f
+```

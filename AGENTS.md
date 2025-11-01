@@ -36,3 +36,9 @@ pytest tests/test_reference_pytorch.py -v
 ```
 
 Reference tests require dev dependencies and will skip if PyTorch is not installed.
+
+## Reference implementation
+
+The reference implementatio  for ContentVec can be found in `vendor/contentvec`. Fairseq can be found in `vendor/fairseq`.
+
+The module should no  depend on fairseq or contentvec (except in reference tests), so we'll reimplement any code we need, to keep this a stand-alone repo.
