@@ -23,6 +23,7 @@ dev = [
     "torch>=2.0.0",
     "numpy>=1.24.0",
     "ruff>=0.8.0",
+    "omegaconf>=2.0.0",
 ]
 
 [tool.pytest.ini_options]
