@@ -369,6 +369,9 @@ class TransformerEncoder_1(nn.Module):
         self.layerdrop = layerdrop
         self.num_layers = encoder_layers
 
+        # Dropout applied after positional conv (stored as attribute to inherit eval mode)
+        self.dropout_layer = nn.Dropout(dropout)
+
         # Apply BERT-style parameter initialization
         self._apply_init(init_bert_params)
 
@@ -451,7 +454,7 @@ class TransformerEncoder_1(nn.Module):
         if not self.layer_norm_first:
             x = self.layer_norm(x)
 
-        x = nn.Dropout(self.dropout)(x)
+        x = self.dropout_layer(x)
 
         layer_results = []
         r = None
