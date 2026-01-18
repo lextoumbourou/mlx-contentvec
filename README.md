@@ -2,7 +2,7 @@
 
 MLX implementation of [ContentVec](https://arxiv.org/abs/2204.09224) / HuBERT for Apple Silicon.
 
-This is the **feature extraction backbone** for [RVC-MLX](https://github.com/example/rvc-mlx), a native Apple Silicon implementation of [Retrieval-based Voice Conversion](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI).
+This is the **feature extraction backbone** for RVC-MLX (coming soon), a native Apple Silicon implementation of [Retrieval-based Voice Conversion](https://github.com/RVC-Project/Retrieval-based-Voice-Conversion-WebUI).
 
 ## What is ContentVec?
 

@@ -56,7 +56,6 @@ Raw Audio (16kHz)
 | `scripts/convert_weights.py` | ✅ Complete | PyTorch → SafeTensors conversion |
 | `scripts/test_feature_comparison.py` | ⚠️ Unknown | Needs verification |
 | `scripts/dump_contentvec_feature.py` | ⚠️ Unknown | Needs verification |
-| `test_pytorch_features.py` | ✅ Ready | Reference feature extraction |
 
 ### Tests
 
@@ -88,9 +87,9 @@ Raw Audio (16kHz)
 
 ### Medium Priority
 
-4. **Documentation**
-   - [ ] Usage examples in README
-   - [ ] API documentation
+4. **Documentation** ✅ COMPLETE
+   - [x] Usage examples in README
+   - [x] HuggingFace model with pre-converted weights
    - [ ] Inference benchmarks (MLX vs PyTorch)
 
 5. **Edge Cases**
@@ -126,6 +125,8 @@ speaker_embed_dim = 256  # Speaker embedding dimension
 | Layer Type | PyTorch Shape | MLX Shape | Transform |
 |------------|--------------|-----------|-----------|
 | Conv1d weight | (out, in, kernel) | (out, kernel, in) | transpose(0, 2, 1) |
+| Conv1d WeightNorm `v` | (out, in, kernel) | (out, kernel, in) | transpose(0, 2, 1) |
+| Conv1d WeightNorm `g` | (1, 1, kernel) | (1, kernel, 1) | transpose(0, 2, 1) |
 | Linear weight | (out, in) | (out, in) | none |
 | LayerNorm | (dim,) | (dim,) | none |
 
@@ -145,9 +146,22 @@ layer_norm_first                 (same, affects residual order)
 
 - `assets/testing.mp3` - Test audio file for validation
 
+## Pre-converted Weights
+
+Pre-converted MLX weights are available on HuggingFace:
+
+```python
+from huggingface_hub import hf_hub_download
+
+weights_path = hf_hub_download(
+    repo_id="lexandstuff/mlx-contentvec",
+    filename="contentvec_base.safetensors"
+)
+```
+
 ## Reference Implementation
 
-- `vendor/fairseq.bak/` - Original fairseq implementation
+- `vendor/fairseq.bak/` - Original fairseq implementation (for development only)
 - `vendor/ref_weights/hubert_base.pt` - Reference weights (MD5: b76f784c1958d4e535cd0f6151ca35e4)
 
 ## Validation Criteria
