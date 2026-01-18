@@ -163,3 +163,142 @@ The MLX implementation is considered complete when:
 3. **All Tests Pass**: Complete test suite executes without failures
 
 4. **End-to-End**: Can process `assets/testing.mp3` and produce identical features
+
+## Extracting PyTorch Reference Features
+
+The reference checkpoint requires fairseq with specific patches for numpy compatibility. Use Python 3.9 with the vendored fairseq:
+
+```bash
+cd /tmp && uv run --python 3.9 --isolated \
+  --with torch \
+  --with 'numpy>=1.20,<2.0' \
+  --with omegaconf \
+  --with hydra-core \
+  --with bitarray \
+  --with regex \
+  --with sacrebleu \
+  --with cython \
+  --with tqdm \
+  --with librosa \
+  --with soundfile \
+  python << 'SCRIPT'
+import sys
+import numpy as np
+
+# Patch numpy deprecated aliases (required for fairseq compatibility)
+np.float = np.float64
+np.int = np.int64
+np.bool = np.bool_
+np.object = np.object_
+np.str = np.str_
+
+sys.path.insert(0, '/path/to/mlx-contentvec/vendor/fairseq.bak')
+
+import torch
+import librosa
+from argparse import Namespace
+
+# Load audio at 16kHz
+audio, sr = librosa.load('assets/testing.mp3', sr=16000, mono=True)
+
+# Load checkpoint with weights_only=False (required for fairseq)
+model_path = 'vendor/ref_weights/hubert_base.pt'
+ckpt = torch.load(model_path, map_location='cpu', weights_only=False)
+model_cfg = ckpt['cfg']['model']
+state_dict = ckpt['model']
+
+# Create args namespace from config
+args = Namespace(**model_cfg)
+args.encoder_layers = 12  # Use standard 12 layers
+
+# Build components
+from fairseq.models.wav2vec.wav2vec2 import ConvFeatureExtractionModel, TransformerEncoder
+from fairseq.modules import LayerNorm
+
+feature_extractor = ConvFeatureExtractionModel(
+    conv_layers=eval(model_cfg['conv_feature_layers']),
+    dropout=0.0,
+    mode=model_cfg['extractor_mode'],
+    conv_bias=model_cfg['conv_bias'],
+)
+encoder = TransformerEncoder(args)
+layer_norm = LayerNorm(512)
+post_extract_proj = torch.nn.Linear(512, model_cfg['encoder_embed_dim'])
+
+# Load weights
+fe_state = {k.replace('feature_extractor.', ''): v for k, v in state_dict.items() if k.startswith('feature_extractor.')}
+feature_extractor.load_state_dict(fe_state)
+enc_state = {k.replace('encoder.', ''): v for k, v in state_dict.items() if k.startswith('encoder.')}
+encoder.load_state_dict(enc_state)
+layer_norm.load_state_dict({'weight': state_dict['layer_norm.weight'], 'bias': state_dict['layer_norm.bias']})
+post_extract_proj.load_state_dict({'weight': state_dict['post_extract_proj.weight'], 'bias': state_dict['post_extract_proj.bias']})
+
+feature_extractor.eval()
+encoder.eval()
+layer_norm.eval()
+post_extract_proj.eval()
+
+# Forward pass
+source = torch.from_numpy(audio).float().unsqueeze(0)
+
+with torch.no_grad():
+    features = feature_extractor(source)     # (B, 512, T')
+    features = features.transpose(1, 2)       # (B, T', 512)
+    features = layer_norm(features)
+    features = post_extract_proj(features)    # (B, T', 768)
+    encoder_out = encoder(features, padding_mask=None)
+    x = encoder_out[0]                        # (B, T', 768)
+
+features_np = x.squeeze(0).cpu().numpy()
+np.save('features_pytorch.npy', features_np)
+SCRIPT
+```
+
+### Current Validation Status
+
+**Intermediate Outputs (all match):**
+- Conv output: ✅ Exact match
+- LayerNorm output: ✅ Match (diff < 1e-5)
+- Projection output: ✅ Match (diff < 1e-5)
+
+**Encoder Output: ❌ Divergence**
+- Max abs diff: ~1.0
+- Mean abs diff: ~0.08
+- Cosine similarity: 0.94
+
+The divergence occurs in the TransformerEncoder, specifically in:
+
+**Root Cause: WeightNorm precision issue in positional convolution**
+
+Analysis shows:
+- Conv output: ✅ Exact match (0 diff)
+- LayerNorm output: ✅ Match (diff < 1e-5)
+- Projection output: ✅ Match (diff < 1e-5)
+- **Pos Conv output: ❌ Max diff 0.12**
+- Transformer Layer 0 (with same input): ✅ Match (diff < 1e-5)
+
+The issue is in `WeightNorm` computation for the positional convolution:
+- MLX's `mx.linalg.norm` with axes=[0,2] gives ~1% lower norms than manual computation
+- This causes small errors in normalized weights
+- The errors accumulate through 12 transformer layers
+
+**Weight Normalization Details**
+
+PyTorch pos_conv:
+- Weight shape: (768, 48, 128) = (out, in/groups, kernel)
+- weight_norm applied with dim=2 (kernel dimension)
+- Formula: `w = g * v / ||v||` where ||v|| is Frobenius norm over (out, in/groups)
+
+MLX pos_conv:
+- Weight shape: (768, 128, 48) = (out, kernel, in/groups) - transposed
+- WeightNorm with dim=1 (kernel dimension in MLX format)
+- Same formula, but MLX norm computation has precision differences
+
+**Fix Required**
+
+Update `mlx_contentvec/modules/weight_norm.py` to use explicit computation:
+```python
+# Instead of: v_norm = mx.linalg.norm(v, axis=tuple(wn_axes), keepdims=True)
+# Use: v_squared = mx.sum(v * v, axis=tuple(wn_axes), keepdims=True)
+#      v_norm = mx.sqrt(v_squared)
+```
