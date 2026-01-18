@@ -224,6 +224,20 @@ The conversion from PyTorch to MLX requires:
 
 See `scripts/convert_weights.py` and `IMPLEMENTATION_NOTES.md` for details.
 
+### Publishing to PyPI
+
+1. Update the version in `pyproject.toml`
+2. Update `CHANGELOG.md` with the new version
+3. Build and upload:
+
+```bash
+# Build distribution packages
+uv run python -m build
+
+# Upload to PyPI
+uv run twine upload dist/*
+```
+
 ## License
 
 MIT
