@@ -24,31 +24,45 @@ pip install -e .
 
 ## Quick Start
 
-### 1. Download and Convert Weights
+### 1. Download Weights
 
-Download the HuBERT base weights used by RVC:
+Download pre-converted MLX weights from HuggingFace:
+
+```python
+from huggingface_hub import hf_hub_download
+
+weights_path = hf_hub_download(
+    repo_id="lexandstuff/mlx-contentvec",
+    filename="contentvec_base.safetensors"
+)
+```
+
+Or manually:
 
 ```bash
 mkdir -p weights
+wget -O weights/contentvec_base.safetensors \
+  "https://huggingface.co/lexandstuff/mlx-contentvec/resolve/main/contentvec_base.safetensors"
+```
+
+<details>
+<summary>Converting weights manually (advanced)</summary>
+
+If you need to convert from PyTorch yourself:
+
+```bash
+# Download original PyTorch weights
 wget -O weights/hubert_base.pt \
   "https://huggingface.co/lj1995/VoiceConversionWebUI/resolve/main/hubert_base.pt"
 
-# Verify checksum
-echo "b76f784c1958d4e535cd0f6151ca35e4  weights/hubert_base.pt" | md5sum -c
-```
-
-Convert to MLX SafeTensors format. This requires Python 3.9 and fairseq (due to compatibility issues with newer Python):
-
-```bash
-# Option A: Use the conversion script with vendored fairseq
-# First, set up the vendor directory (see Development section)
+# Convert (requires Python 3.9 + fairseq)
 uv run --python 3.9 python scripts/convert_weights.py \
   --pytorch_ckpt weights/hubert_base.pt \
   --mlx_ckpt weights/contentvec_base.safetensors
-
-# Option B: Use a pre-converted weights file (if available)
-# Check releases for pre-converted .safetensors files
 ```
+
+See [IMPLEMENTATION_NOTES.md](IMPLEMENTATION_NOTES.md) for details.
+</details>
 
 ### 2. Extract Features
 
