@@ -13,6 +13,7 @@ dependencies = [
     "librosa>=0.11.0",
     "mlx>=0.29.3",
     "npy-append-array>=0.9.19",
+    "safetensors>=0.7.0",
     "soundfile>=0.13.1",
 ]
 
@@ -49,4 +50,9 @@ select = [
 ]
 ignore = [
     "E501",  # line too long (handled by formatter)
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.2",
 ]

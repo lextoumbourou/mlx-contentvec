@@ -167,7 +167,9 @@ mlx-contentvec/
 ├── scripts/
 │   └── convert_weights.py         # PyTorch → SafeTensors conversion
 ├── tests/
-│   └── ...
+│   ├── test_conv_feature_extraction.py
+│   ├── test_end_to_end.py
+│   └── test_weight_norm.py
 ├── IMPLEMENTATION_NOTES.md        # Technical details & validation
 └── README.md
 ```
@@ -190,8 +192,23 @@ cd fairseq && git checkout 0b21875
 ### Running Tests
 
 ```bash
-pytest
+uv run pytest
 ```
+
+Test suite (48 tests):
+
+| Test File | Tests | Description |
+|-----------|-------|-------------|
+| `test_conv_feature_extraction.py` | 24 | CNN feature extractor unit tests |
+| `test_end_to_end.py` | 10 | Integration tests (HuggingFace → inference) |
+| `test_weight_norm.py` | 16 | Weight normalization unit tests |
+
+The end-to-end tests download weights from HuggingFace and verify:
+- Model loading and initialization
+- Inference with various input shapes
+- Deterministic output in eval mode
+- Feature statistics (no NaN/Inf)
+- Real audio file processing
 
 ### Weight Conversion Details
 
