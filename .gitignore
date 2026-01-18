@@ -11,3 +11,12 @@ wheels/
 
 # Claude
 .claude
+
+# Test artifacts
+*.npy
+
+# Model weights (large binary files - generate locally)
+*.safetensors
+
+# Vendored dependencies (not for distribution)
+vendor/

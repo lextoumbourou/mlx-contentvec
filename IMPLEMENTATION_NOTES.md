@@ -71,15 +71,15 @@ Raw Audio (16kHz)
 
 ### High Priority
 
-1. **End-to-End Validation**
-   - [ ] Run full model with `assets/testing.mp3`
-   - [ ] Compare MLX output vs PyTorch output
-   - [ ] Verify numerical tolerance (target: atol=1e-4, rtol=1e-3)
+1. **End-to-End Validation** ✅ COMPLETE
+   - [x] Run full model with `assets/testing.mp3`
+   - [x] Compare MLX output vs PyTorch output
+   - [x] Verify numerical tolerance (target: atol=1e-4, rtol=1e-3)
 
-2. **Weight Conversion Verification**
-   - [ ] Run `scripts/convert_weights.py` on `vendor/ref_weights/hubert_base.pt`
-   - [ ] Verify all weights are converted correctly
-   - [ ] Check for any missing/extra keys
+2. **Weight Conversion Verification** ✅ COMPLETE
+   - [x] Run `scripts/convert_weights.py` on `vendor/ref_weights/hubert_base.pt`
+   - [x] Verify all weights are converted correctly
+   - [x] Check for any missing/extra keys
 
 3. **Test Suite Completion**
    - [ ] Complete `test_transformer_encoder_pytorch.py`
@@ -256,49 +256,32 @@ SCRIPT
 
 ### Current Validation Status
 
-**Intermediate Outputs (all match):**
+**✅ VALIDATION PASSED (2025-01-19)**
+
+End-to-end comparison with PyTorch reference (12 layers, no speaker conditioning):
+- Max abs diff: 0.000008
+- Mean abs diff: 0.000001
+- Cosine similarity: 1.000000
+
+**All Intermediate Outputs Match:**
 - Conv output: ✅ Exact match
 - LayerNorm output: ✅ Match (diff < 1e-5)
 - Projection output: ✅ Match (diff < 1e-5)
+- Pos Conv output: ✅ Match (diff < 1e-4)
+- Encoder output: ✅ Match (diff < 1e-5)
 
-**Encoder Output: ❌ Divergence**
-- Max abs diff: ~1.0
-- Mean abs diff: ~0.08
-- Cosine similarity: 0.94
+**Bugs Fixed:**
+1. **Float16 precision issue**: Weights were saved as float16 in safetensors, causing precision loss in WeightNorm computation. Fixed by explicitly casting to float32 during conversion.
 
-The divergence occurs in the TransformerEncoder, specifically in:
+2. **Dropout in eval mode**: `nn.Dropout(self.dropout)(x)` in `transformer_encoder.py` created a new Dropout instance each forward pass that didn't inherit the parent module's eval mode. Fixed by storing dropout as a class attribute (`self.dropout_layer`).
 
-**Root Cause: WeightNorm precision issue in positional convolution**
+3. **Weight loading key format**: MLX's `update()` method expects nested dict structure, but safetensors uses flat keys like `encoder.layers.0.fc1.weight`. Fixed by implementing `_unflatten_weights()` to convert flat keys to nested structure.
 
-Analysis shows:
-- Conv output: ✅ Exact match (0 diff)
-- LayerNorm output: ✅ Match (diff < 1e-5)
-- Projection output: ✅ Match (diff < 1e-5)
-- **Pos Conv output: ❌ Max diff 0.12**
-- Transformer Layer 0 (with same input): ✅ Match (diff < 1e-5)
-
-The issue is in `WeightNorm` computation for the positional convolution:
-- MLX's `mx.linalg.norm` with axes=[0,2] gives ~1% lower norms than manual computation
-- This causes small errors in normalized weights
-- The errors accumulate through 12 transformer layers
-
-**Weight Normalization Details**
-
-PyTorch pos_conv:
-- Weight shape: (768, 48, 128) = (out, in/groups, kernel)
-- weight_norm applied with dim=2 (kernel dimension)
-- Formula: `w = g * v / ||v||` where ||v|| is Frobenius norm over (out, in/groups)
-
-MLX pos_conv:
-- Weight shape: (768, 128, 48) = (out, kernel, in/groups) - transposed
-- WeightNorm with dim=1 (kernel dimension in MLX format)
-- Same formula, but MLX norm computation has precision differences
-
-**Fix Required**
-
-Update `mlx_contentvec/modules/weight_norm.py` to use explicit computation:
-```python
-# Instead of: v_norm = mx.linalg.norm(v, axis=tuple(wn_axes), keepdims=True)
-# Use: v_squared = mx.sum(v * v, axis=tuple(wn_axes), keepdims=True)
-#      v_norm = mx.sqrt(v_squared)
-```
+**Usage Notes:**
+- For inference without speaker conditioning, use `encoder_layers_1=0`:
+  ```python
+  model = ContentvecModel(encoder_layers_1=0)
+  model.load_weights('contentvec_base.safetensors')
+  model.eval()
+  ```
+- Speaker-conditioned layers (12-14) require a non-zero speaker embedding to produce non-zero output

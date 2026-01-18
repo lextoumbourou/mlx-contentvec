@@ -140,15 +140,58 @@ class ContentvecModel(nn.Module):
 
         logger.info(f"Loading weights from {weights_path}")
 
-        # Load weights from safetensors
-        weights = {}
+        # Load weights from safetensors (flat keys like "encoder.layers.0.fc1.weight")
+        flat_weights = {}
         with safe_open(weights_path, framework="numpy") as f:
             for key in f.keys():
-                weights[key] = mx.array(f.get_tensor(key))
+                flat_weights[key] = mx.array(f.get_tensor(key))
+
+        # Convert flat keys to nested dict structure that MLX's update() expects
+        weights = self._unflatten_weights(flat_weights)
 
         # Update model parameters
         self.update(weights)
-        logger.info(f"Loaded {len(weights)} weight tensors")
+        logger.info(f"Loaded {len(flat_weights)} weight tensors")
+
+    def _unflatten_weights(self, flat_weights: dict) -> dict:
+        """
+        Convert flat weight keys like "encoder.layers.0.fc1.weight"
+        into nested dict structure that MLX's update() expects.
+        """
+        result = {}
+        for key, value in flat_weights.items():
+            parts = key.split(".")
+            current = result
+            for i, part in enumerate(parts[:-1]):
+                # Check if next part is a numeric index
+                if part not in current:
+                    # Look ahead to see if we need a list
+                    next_part = parts[i + 1]
+                    if next_part.isdigit():
+                        current[part] = {}  # Will convert to list later
+                    else:
+                        current[part] = {}
+                current = current[part]
+            current[parts[-1]] = value
+
+        # Post-process: convert dict with numeric keys to lists
+        return self._convert_numeric_dicts_to_lists(result)
+
+    def _convert_numeric_dicts_to_lists(self, d):
+        """Recursively convert dicts with all-numeric keys to lists."""
+        if not isinstance(d, dict):
+            return d
+
+        # Check if all keys are numeric strings
+        if d and all(k.isdigit() for k in d.keys()):
+            # Convert to list, filling gaps with None
+            max_idx = max(int(k) for k in d.keys())
+            lst = [None] * (max_idx + 1)
+            for k, v in d.items():
+                lst[int(k)] = self._convert_numeric_dicts_to_lists(v)
+            return lst
+        else:
+            return {k: self._convert_numeric_dicts_to_lists(v) for k, v in d.items()}
 
     def forward_features(
         self, source: mx.array, padding_mask: Optional[mx.array] = None
@@ -192,7 +235,7 @@ class ContentvecModel(nn.Module):
     def extract_features(
         self,
         source: mx.array,
-        spk_emb: mx.array,
+        spk_emb: Optional[mx.array] = None,
         padding_mask: Optional[mx.array] = None,
         mask: bool = False,
         ret_conv: bool = False,
@@ -216,6 +259,12 @@ class ContentvecModel(nn.Module):
             - features: Extracted features of shape (batch, time, embed_dim)
             - padding_mask: Updated padding mask or None
         """
+        # Create default zero speaker embedding if not provided
+        # Shape: (batch_size, dim_spk=256)
+        if spk_emb is None:
+            batch_size = source.shape[0]
+            spk_emb = mx.zeros((batch_size, 256))
+
         # Extract convolutional features
         features = self.forward_features(source, padding_mask)
 
@@ -252,7 +301,7 @@ class ContentvecModel(nn.Module):
     def __call__(
         self,
         source: mx.array,
-        spk_emb: mx.array,
+        spk_emb: Optional[mx.array] = None,
         padding_mask: Optional[mx.array] = None,
         mask: bool = False,
         features_only: bool = True,
