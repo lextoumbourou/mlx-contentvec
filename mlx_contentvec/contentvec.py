@@ -6,7 +6,7 @@ Based on the fairseq ContentVec implementation.
 
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 import mlx.core as mx
 import mlx.nn as nn
@@ -16,6 +16,10 @@ from .conv_feature_extraction import ConvFeatureExtractionModel, lengths_to_padd
 from .transformer_encoder import TransformerEncoder_1
 
 logger = logging.getLogger(__name__)
+
+# HuggingFace Hub defaults for easy weight loading
+HF_REPO_ID = "lexandstuff/mlx-contentvec"
+HF_WEIGHTS_FILE = "contentvec_base.safetensors"
 
 
 class ContentvecModel(nn.Module):
@@ -126,6 +130,49 @@ class ContentvecModel(nn.Module):
         )
 
         self.feature_grad_mult = feature_grad_mult
+
+    @classmethod
+    def from_pretrained(
+        cls,
+        repo_id: str = HF_REPO_ID,
+        filename: str = HF_WEIGHTS_FILE,
+        weights_path: Optional[Union[str, Path]] = None,
+    ) -> "ContentvecModel":
+        """
+        Load a pretrained ContentVec model.
+
+        Downloads weights from HuggingFace Hub if not provided locally.
+
+        Args:
+            repo_id: HuggingFace repo ID (default: "lexandstuff/mlx-contentvec")
+            filename: Weights filename in repo (default: "contentvec_base.safetensors")
+            weights_path: Local path to weights file (overrides HF download)
+
+        Returns:
+            Initialized ContentvecModel with loaded weights
+
+        Example:
+            # Simple usage (auto-downloads from HuggingFace)
+            model = ContentvecModel.from_pretrained()
+
+            # Custom repo
+            model = ContentvecModel.from_pretrained(repo_id="my-org/my-weights")
+
+            # Local weights
+            model = ContentvecModel.from_pretrained(weights_path="./weights.safetensors")
+        """
+        if weights_path is None:
+            from huggingface_hub import hf_hub_download
+
+            logger.info(f"Downloading weights from {repo_id}/{filename}")
+            weights_path = hf_hub_download(repo_id, filename)
+
+        # Create model with RVC-compatible settings (no speaker conditioning layers)
+        model = cls(encoder_layers_1=0)
+        model.load_weights(weights_path)
+        model.eval()
+
+        return model
 
     def load_weights(self, weights_path: str):
         """

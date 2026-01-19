@@ -28,29 +28,48 @@ pip install -e .
 
 ## Quick Start
 
-### 1. Download Weights
+```python
+import mlx.core as mx
+import librosa
+from mlx_contentvec import ContentvecModel
 
-Download pre-converted MLX weights from HuggingFace:
+# Load model (auto-downloads weights from HuggingFace)
+model = ContentvecModel.from_pretrained()
+
+# Load audio at 16kHz
+audio, sr = librosa.load("input.wav", sr=16000, mono=True)
+source = mx.array(audio).reshape(1, -1)
+
+# Extract features
+result = model(source)
+features = result["x"]  # Shape: (1, num_frames, 768)
+
+print(f"Audio: {len(audio)/16000:.2f}s -> Features: {features.shape}")
+# Example: Audio: 3.00s -> Features: (1, 93, 768)
+```
+
+### Manual Weight Loading
+
+If you prefer to manage weights yourself:
 
 ```python
 from huggingface_hub import hf_hub_download
+from mlx_contentvec import ContentvecModel
 
+# Download weights
 weights_path = hf_hub_download(
     repo_id="lexandstuff/mlx-contentvec",
     filename="contentvec_base.safetensors"
 )
-```
 
-Or manually:
-
-```bash
-mkdir -p weights
-wget -O weights/contentvec_base.safetensors \
-  "https://huggingface.co/lexandstuff/mlx-contentvec/resolve/main/contentvec_base.safetensors"
+# Load model manually
+model = ContentvecModel(encoder_layers_1=0)
+model.load_weights(weights_path)
+model.eval()
 ```
 
 <details>
-<summary>Converting weights manually (advanced)</summary>
+<summary>Converting weights from PyTorch (advanced)</summary>
 
 If you need to convert from PyTorch yourself:
 
@@ -67,30 +86,6 @@ uv run --python 3.9 python scripts/convert_weights.py \
 
 See [IMPLEMENTATION_NOTES.md](IMPLEMENTATION_NOTES.md) for details.
 </details>
-
-### 2. Extract Features
-
-```python
-import mlx.core as mx
-import librosa
-from mlx_contentvec import ContentvecModel
-
-# Load model (12 transformer layers, no speaker conditioning)
-model = ContentvecModel(encoder_layers_1=0)
-model.load_weights("weights/contentvec_base.safetensors")
-model.eval()
-
-# Load audio at 16kHz
-audio, sr = librosa.load("input.wav", sr=16000, mono=True)
-source = mx.array(audio).reshape(1, -1)
-
-# Extract features
-result = model(source)
-features = result["x"]  # Shape: (1, num_frames, 768)
-
-print(f"Audio: {len(audio)/16000:.2f}s -> Features: {features.shape}")
-# Example: Audio: 3.00s -> Features: (1, 93, 768)
-```
 
 ## API Reference
 
