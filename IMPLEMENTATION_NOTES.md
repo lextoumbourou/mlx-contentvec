@@ -294,7 +294,13 @@ End-to-end comparison with PyTorch reference (12 layers, no speaker conditioning
 3. **Weight loading key format**: MLX's `update()` method expects nested dict structure, but safetensors uses flat keys like `encoder.layers.0.fc1.weight`. Fixed by implementing `_unflatten_weights()` to convert flat keys to nested structure.
 
 **Usage Notes:**
-- For inference without speaker conditioning, use `encoder_layers_1=0`:
+- Use `from_pretrained()` for simple model loading (recommended):
+  ```python
+  model = ContentvecModel.from_pretrained()
+  ```
+  This auto-downloads weights from HuggingFace, sets `encoder_layers_1=0`, and calls `eval()`.
+
+- For manual weight loading without speaker conditioning, use `encoder_layers_1=0`:
   ```python
   model = ContentvecModel(encoder_layers_1=0)
   model.load_weights('contentvec_base.safetensors')
