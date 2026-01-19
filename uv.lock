@@ -292,58 +292,6 @@ wheels = [
 ]
 
 [[package]]
-name = "contentvec-mlx"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "huggingface-hub" },
-    { name = "librosa" },
-    { name = "mlx" },
-    { name = "npy-append-array" },
-    { name = "safetensors" },
-    { name = "soundfile" },
-]
-
-[package.optional-dependencies]
-dev = [
-    { name = "numpy" },
-    { name = "omegaconf" },
-    { name = "pytest" },
-    { name = "ruff" },
-    { name = "torch" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "build" },
-    { name = "pytest" },
-    { name = "twine" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "huggingface-hub", specifier = ">=1.3.2" },
-    { name = "librosa", specifier = ">=0.11.0" },
-    { name = "mlx", specifier = ">=0.29.3" },
-    { name = "npy-append-array", specifier = ">=0.9.19" },
-    { name = "numpy", marker = "extra == 'dev'", specifier = ">=1.24.0" },
-    { name = "omegaconf", marker = "extra == 'dev'", specifier = ">=2.0.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.8.0" },
-    { name = "safetensors", specifier = ">=0.7.0" },
-    { name = "soundfile", specifier = ">=0.13.1" },
-    { name = "torch", marker = "extra == 'dev'", specifier = ">=2.0.0" },
-]
-provides-extras = ["dev"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "build", specifier = ">=1.4.0" },
-    { name = "pytest", specifier = ">=8.4.2" },
-    { name = "twine", specifier = ">=6.2.0" },
-]
-
-[[package]]
 name = "cryptography"
 version = "46.0.3"
 source = { registry = "https://pypi.org/simple" }
@@ -825,6 +773,58 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/42/1a/fb573fc2edc22a777fa254ff5c0c886ffd2c88aeb1f21c45778ef170f990/mlx-0.30.3-cp314-cp314-macosx_26_0_arm64.whl", hash = "sha256:7e352c0369a2f7e54d4f317b434eab3333918ea9edde1c43c61d36386b6f76bf", size = 571732 },
     { url = "https://files.pythonhosted.org/packages/9e/db/d0083e8f2205b3b2dcd9670eb6f0d6c1b7cbfea6b01a1f8bff39142edf44/mlx-0.30.3-cp314-cp314-manylinux_2_35_aarch64.whl", hash = "sha256:00ac867f3d003c1477a66a579442c2040ba7ea43ce3c174490d1f8bf379606bd", size = 619635 },
     { url = "https://files.pythonhosted.org/packages/ab/90/ab0b93ff0e76da4fe0e878722c76a308cfb950b044a4676e9617276d8ccd/mlx-0.30.3-cp314-cp314-manylinux_2_35_x86_64.whl", hash = "sha256:5be7d0329036f09c6ed003ea3e307e97e3144f20a3e4711b01810d7d5013cf2c", size = 659652 },
+]
+
+[[package]]
+name = "mlx-contentvec"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "huggingface-hub" },
+    { name = "librosa" },
+    { name = "mlx" },
+    { name = "npy-append-array" },
+    { name = "safetensors" },
+    { name = "soundfile" },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "numpy" },
+    { name = "omegaconf" },
+    { name = "pytest" },
+    { name = "ruff" },
+    { name = "torch" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "build" },
+    { name = "pytest" },
+    { name = "twine" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "huggingface-hub", specifier = ">=1.3.2" },
+    { name = "librosa", specifier = ">=0.11.0" },
+    { name = "mlx", specifier = ">=0.29.3" },
+    { name = "npy-append-array", specifier = ">=0.9.19" },
+    { name = "numpy", marker = "extra == 'dev'", specifier = ">=1.24.0" },
+    { name = "omegaconf", marker = "extra == 'dev'", specifier = ">=2.0.0" },
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0.0" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.8.0" },
+    { name = "safetensors", specifier = ">=0.7.0" },
+    { name = "soundfile", specifier = ">=0.13.1" },
+    { name = "torch", marker = "extra == 'dev'", specifier = ">=2.0.0" },
+]
+provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "build", specifier = ">=1.4.0" },
+    { name = "pytest", specifier = ">=8.4.2" },
+    { name = "twine", specifier = ">=6.2.0" },
 ]
 
 [[package]]

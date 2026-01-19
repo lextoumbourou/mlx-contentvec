@@ -15,7 +15,7 @@ Input Audio (16kHz) → ContentVec → Semantic Features (768-dim) → RVC Decod
 ## Installation
 
 ```bash
-pip install contentvec-mlx
+pip install mlx-contentvec
 ```
 
 For development:
